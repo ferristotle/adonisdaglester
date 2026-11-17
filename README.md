@@ -1,24 +1,25 @@
 # Adonis Daglester
 
-A Windows script for backing up a Minecraft Java world and sending it to a friend to host.
+A Windows script that packages a Minecraft Java world into a verified ZIP for a friend to host.
 
 ## Use
 
 1. Download `Adonis-Daglester.cmd` on the PC with the world.
-2. Save and quit Minecraft, then close Minecraft and Lunar Client completely.
-3. Double-click the file, pick the world, and confirm.
-4. Wait while it creates and checks the ZIP.
-5. When the Wormhole link is copied, paste it into your chat.
+2. Save and quit Minecraft, then fully close Minecraft and Lunar Client. Pause anything editing or syncing the world.
+3. Double-click the file. Choose the world folder containing `level.dat` and confirm that the game is closed.
+4. Wait for **DONE — VERIFIED BACKUP**.
+5. Wormhole opens in your default browser, and File Explorer highlights `Minecraft-World.zip`. Select that ZIP on Wormhole, or drag it onto the page.
+6. Copy the link from Wormhole and send it privately to your friend. Send the displayed SHA-256 separately too, with the exact Minecraft version and any mod details.
 
-Keep the Edge window open and the PC awake until your friend finishes downloading. The link can appear before the upload is finished.
+Keep the upload page and PC awake until your friend has finished downloading. Opening Wormhole does not start an upload.
 
-You only need the one `.cmd` file. It contains the PowerShell scripts and unpacks them into a temporary folder when run. Requires Windows PowerShell 5.1 or newer and an installed copy of Microsoft Edge. No administrator access or extra downloads.
+Only the one `.cmd` file is needed. It contains a readable PowerShell script and unpacks it into a temporary folder when run. Uses Windows PowerShell 5.1 and .NET. No administrator rights, installs, browser extensions or specific browser required.
 
-## The backup
+## What it checks
 
-The script reads the original world and writes the backup outside it. It includes hidden files, all dimensions, player data, datapacks and any other files inside the world folder.
+The original world is only read. All files inside it are included, including hidden files, dimensions, player data, datapacks and empty folders. Files are hashed as they are copied, then every ZIP entry is read back and checked by length and SHA-256. The source is read again to check that it did not change.
 
-It checks each archived file against the source using SHA-256, then rechecks the source for changes. If verification fails, it stops without marking the backup complete.
+An existing `session.lock` is opened read-only during backup. It is never created, removed or repaired. You must keep Minecraft closed, including when a world has no lock file. Linked folders, junctions and cloud placeholders cause a stop rather than a silent omission.
 
 Backups go under:
 
@@ -26,30 +27,24 @@ Backups go under:
 Documents\Minecraft-Backups\Minecraft-World-<date>-<id>\
 ```
 
-That folder contains the world ZIP, checksum, file manifest and transfer notes. A detected share link is also saved as `WORMHOLE-LINK.txt`.
+The folder contains `Minecraft-World.zip`, its `.sha256` checksum and `TRANSFER-INFO.txt`. A failed backup stays in a folder starting with `.incomplete-`. Do not send that output.
 
-## If something fails
-
-- **World missing:** use Browse and select the folder containing `level.dat`.
-- **Game still running:** close Minecraft, Lunar, their launchers and any Java apps, then retry.
-- **Upload failed:** the verified ZIP is kept for manual sharing. Edge settings, network problems or changes to Wormhole can break automatic uploading.
-
-Do not send output from a folder named `.incomplete-`.
+There is no automatic upload, browser debugging or clipboard access. If the browser or folder window fails to open, the verified ZIP stays at the printed path for manual sharing.
 
 ## Receiving the world
 
-Compare the downloaded ZIP's hash with the one the sender gives you:
+Compare this result with the hash the sender gave you:
 
 ```powershell
 Get-FileHash -LiteralPath '.\Minecraft-World.zip' -Algorithm SHA256
 ```
 
-Use the matching Minecraft version and required server mods. With the server stopped, extract the ZIP and place `world` beside `server.properties`. Set `level-name=world`; check that `world\level.dat` exists without another `world` folder nested inside it.
+Use the matching Minecraft version and required server mods. With the server stopped, extract into a new empty folder and place `world` beside `server.properties`. Set `level-name=world`; check that `world\level.dat` exists without another `world` folder nested inside it. Keep account authentication and the whitelist enabled.
 
-Keep the original ZIP before making changes. Mods and configs stored outside the world folder need to be transferred separately.
+Keep the original ZIP. Mods and configs outside the world folder are not included. ZIP does not preserve NTFS permissions or alternate data streams.
 
 ## Status
 
-Early version. The scripts and link handling have been checked locally, but the full Windows, Edge and Wormhole flow has not been tested end to end yet.
+The self-contained packaging and static safeguards have been checked locally. A full Windows backup-and-restore test has not been run here. Test on a disposable world before relying on it for an important save.
 
-The files are readable in Notepad. Checksums confirm matching bytes, not that a file is free of malware. Keep antivirus enabled and share the complete Wormhole link privately.
+The source is readable in Notepad. Checksums verify matching bytes, not that files are free of malware. Keep antivirus enabled and scan received files.
